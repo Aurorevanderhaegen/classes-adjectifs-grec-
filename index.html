@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Olympus Sorting Game</title>
+    <style>
+        :root {
+            --primary: #d4af37;
+            --primary-dark: #aa8c2c;
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-color: #2c3e50;
+            --success: #27ae60;
+            --error: #c0392b;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #e0eafc, #cfdef3);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            background-color: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            width: 100%;
+            max-width: 600px;
+            padding: 30px;
+            box-sizing: border-box;
+            text-align: center;
+            border: 2px solid var(--primary);
+        }
+
+        h1 {
+            color: var(--primary-dark);
+            margin-bottom: 5px;
+            font-size: 1.8rem;
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        input[type="text"] {
+            width: 80%;
+            padding: 12px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 20px;
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary);
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            margin-bottom: 20px;
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-radius: 8px;
+        }
+
+        .word-card {
+            background: #fff8e7;
+            border: 2px dashed var(--primary);
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+
+        .greek-word {
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: #1a252f;
+            margin-bottom: 5px;
+        }
+
+        .translation {
+            font-style: italic;
+            color: #7f8c8d;
+        }
+
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .option-btn {
+            background: #ffffff;
+            border: 2px solid #e0e0e0;
+            color: var(--text-color);
+            padding: 15px;
+            text-align: left;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .option-btn:hover {
+            border-color: var(--primary);
+            background: #fffdf5;
+        }
+
+        .feedback-message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+            font-weight: 500;
+        }
+
+        .feedback-message.correct {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .feedback-message.wrong {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .next-btn {
+            margin-top: 15px;
+            display: none;
+        }
+
+        .rank-title {
+            font-size: 1.4rem;
+            color: var(--primary-dark);
+            font-weight: bold;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <h1>🏛️ Le Tri Sélectif de l'Olympe</h1>
+    <div class="subtitle">Révision des classes d'adjectifs en grec ancien</div>
+
+    <!-- START SCREEN -->
+    <div id="start-screen" class="screen active">
+        <p>Salutations, noble voyageur ! Hermès a besoin de toi pour ranger les adjectifs sacrés dans leurs vases respectifs.</p>
+        <p>Entre ton prénom pour commencer la quête :</p>
+        <input type="text" id="player-input" placeholder="Ton prénom..." autocomplete="off">
+        <br>
+        <button class="btn" onclick="startGame()">Commencer l'épreuve</button>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div id="game-screen" class="screen">
+        <div class="status-bar">
+            <span id="player-name-display"></span>
+            <span id="progress-display">Question 1/5</span>
+            <span id="score-display">Score : 0</span>
+        </div>
+
+        <div class="word-card">
+            <div class="greek-word" id="word-display">--</div>
+            <div class="translation" id="translation-display">--</div>
+        </div>
+
+        <div class="options-container" id="options-list">
+            <button class="option-btn" onclick="checkAnswer(1)">
+                <strong>Vase I :</strong> 1ère classe
+            </button>
+            <button class="option-btn" onclick="checkAnswer(2)">
+                <strong>Vase II :</strong> 2ème classe
+            </button>
+            <button class="option-btn" onclick="checkAnswer(3)">
+                <strong>Vase III :</strong> 3ème classe
+            </button>
+        </div>
+
+        <div id="feedback" class="feedback-message"></div>
+        <button id="next-btn" class="btn next-btn" onclick="nextQuestion()">Question suivante ➔</button>
+    </div>
+
+    <!-- END SCREEN -->
+    <div id="end-screen" class="screen">
+        <h2>🏆 Fin de l'épreuve !</h2>
+        <p>Bravo <strong id="final-player-name"></strong> ! Voici ton bilan :</p>
+        <p style="font-size: 1.5rem; font-weight: bold;" id="final-score-display">0 / 50 points</p>
+        <div class="rank-title" id="rank-display">--</div>
+        <button class="btn" onclick="restartGame()">Rejouer une partie</button>
+    </div>
+</div>
+
+<script>
+    const adjectiveDataset = [
+        // 1ÈRE CLASSE
+        { word: "σοφός", classType: 1, fullNominative: "σοφός, σοφή, σοφόν", translation: "Sage" },
+        { word: "δίκαιος", classType: 1, fullNominative: "δίκαιος, δικαίᾱ, δίκαιον", translation: "Juste" },
+        { word: "μικρός", classType: 1, fullNominative: "μικρός, μικρᾱ, μικρόν", translation: "Petit" },
+        { word: "καλός", classType: 1, fullNominative: "καλός, καλή, καλόν", translation: "Beau" },
+        { word: "ἄξιος", classType: 1, fullNominative: "ἄξιος, ἀξίᾱ, ἄξιον", translation: "Digne" },
+        { word: "φίλος", classType: 1, fullNominative: "φίλος, φίλη, φίλον", translation: "Cher, ami" },
+
+        // 2ÈME CLASSE
+        { word: "σαφής", classType: 2, fullNominative: "σαφής, σαφής, σαφές", translation: "Clair, évident" },
+        { word: "εὐγενής", classType: 2, fullNominative: "εὐγενής, εὐγενής, εὐγενές", translation: "Noble" },
+        { word: "σώφρων", classType: 2, fullNominative: "σώφρων, σώφρων, σῶφρον", translation: "Sensé, modéré" },
+        { word: "εὐδαίμων", classType: 2, fullNominative: "εὐδαίμων, εὐδαίμων, εὔδαιμον", translation: "Heureux" },
+        { word: "ἄφρων", classType: 2, fullNominative: "ἄφρων, ἄφρων, ἄφρον", translation: "Insensé" },
+        { word: "ψευδής", classType: 2, fullNominative: "ψευδής, ψευδής, ψευδές", translation: "Faux, menteur" },
+
+        // 3ÈME CLASSE
+        { word: "πᾶς", classType: 3, fullNominative: "πᾶς, πᾶσα, πᾶν", translation: "Tout" },
+        { word: "μέλας", classType: 3, fullNominative: "μέλας, μέλαινα, μέλαν", translation: "Noir" },
+        { word: "ἡδύς", classType: 3, fullNominative: "ἡδύς, ἡδεῖα, ἡδύ", translation: "Doux, agréable" },
+        { word: "βαρύς", classType: 3, fullNominative: "βαρύς, βαρεῖα, βαρύ", translation: "Lourd" },
+        { word: "ταχύς", classType: 3, fullNominative: "ταχύς, ταχεῖα, ταχύ", translation: "Rapide" },
+        { word: "ὀξύς", classType: 3, fullNominative: "ὀξύς, ὀξεῖα, ὀξύ", translation: "Aigu, pointu" },
+        { word: "εὐρύς", classType: 3, fullNominative: "εὐρύς, εὐρεῖα, εὐρύ", translation: "Large" },
+        { word: "χαρίεις", classType: 3, fullNominative: "χαρίεις, χαρίεσσα, χαρίεν", translation: "Gracieux" }
+    ];
+
+    let playerName = "";
+    let currentQuestionIndex = 0;
+    let currentScore = 0;
+    let selectedQuestions = [];
+
+    function switchScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+    }
+
+    function startGame() {
+        const nameInput = document.getElementById('player-input').value.trim();
+        if (!nameInput) {
+            alert("Merci d'entrer ton prénom !");
+            return;
+        }
+        playerName = nameInput;
+        currentScore = 0;
+        currentQuestionIndex = 0;
+
+        selectedQuestions = [...adjectiveDataset].sort(() => 0.5 - Math.random()).slice(0, 5);
+
+        document.getElementById('player-name-display').innerText = `👤 ${playerName}`;
+        switchScreen('game-screen');
+        renderQuestion();
+    }
+
+    function renderQuestion() {
+        const item = selectedQuestions[currentQuestionIndex];
+        document.getElementById('progress-display').innerText = `Question ${currentQuestionIndex + 1}/5`;
+        document.getElementById('score-display').innerText = `Score : ${currentScore}`;
+        document.getElementById('word-display').innerText = item.word;
+        document.getElementById('translation-display').innerText = `Traduction : ${item.translation}`;
+
+        const feedbackEl = document.getElementById('feedback');
+        feedbackEl.style.display = 'none';
+        document.getElementById('next-btn').style.display = 'none';
+        toggleOptionButtons(true);
+    }
+
+    function toggleOptionButtons(isEnabled) {
+        const buttons = document.querySelectorAll('.option-btn');
+        buttons.forEach(button => button.disabled = !isEnabled);
+    }
+
+    function checkAnswer(chosenClass) {
+        toggleOptionButtons(false);
+        const item = selectedQuestions[currentQuestionIndex];
+        const feedbackEl = document.getElementById('feedback');
+
+        if (chosenClass === item.classType) {
+            currentScore += 10;
+            feedbackEl.className = "feedback-message correct";
+            feedbackEl.innerHTML = `⚡ <strong>Par Zeus ! C'est exact. (+10 pts)</strong><br>Nominatif aux 3 genres : <em>${item.fullNominative}</em>`;
+        } else {
+            const suffix = item.classType === 1 ? "ère" : "ème";
+            feedbackEl.className = "feedback-message wrong";
+            feedbackEl.innerHTML = `💥 <strong>Par le trident de Poséidon !</strong><br>C'est la ${item.classType}${suffix} classe.<br>Nominatif aux 3 genres : <em>${item.fullNominative}</em>`;
+        }
+
+        document.getElementById('score-display').innerText = `Score : ${currentScore}`;
+        feedbackEl.style.display = 'block';
+        document.getElementById('next-btn').style.display = 'inline-block';
+    }
+
+    function nextQuestion() {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < 5) {
+            renderQuestion();
+        } else {
+            finishGame();
+        }
+    }
+
+    function finishGame() {
+        document.getElementById('final-player-name').innerText = playerName;
+        document.getElementById('final-score-display').innerText = `${currentScore} / 50 points`;
+
+        let playerRank = "";
+        if (currentScore === 50) {
+            playerRank = "👑 Demi-dieu de la Grammaire";
+        } else if (currentScore >= 30) {
+            playerRank = "📜 Érudit d'Athènes";
+        } else {
+            playerRank = "🌿 Jeune Néo-Hellène (En apprentissage)";
+        }
+
+        document.getElementById('rank-display').innerText = playerRank;
+        switchScreen('end-screen');
+    }
+
+    function restartGame() {
+        document.getElementById('player-input').value = "";
+        switchScreen('start-screen');
+    }
+</script>
+
+</body>
+</html>
